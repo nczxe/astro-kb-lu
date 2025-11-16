@@ -1,0 +1,54 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import DocSidebar from '../components/DocSidebar.astro';
+import DocsDock from '../components/DocsDock.astro';
+
+const { title = 'Docs', description = '' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={title} description={description} />
+    <style>
+      .docs-root {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+        /* 为固定侧栏留出空间（侧栏宽度 + gap） */
+        padding-left: calc(200px + 1rem);
+      }
+      aside.sidebar {
+        position: relative; /* 侧栏内部已固定，不需要 sticky */
+      }
+      main.doc-content {
+        min-height: 60vh;
+      }
+      @media (max-width: 900px) {
+        .docs-root {
+          grid-template-columns: 1fr;
+          padding-left: 1rem; /* 移除侧栏留白 */
+        }
+        aside.sidebar {
+          order: 2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <DocsDock />
+    <div class="docs-root">
+      <aside class="sidebar">
+        <DocSidebar />
+      </aside>
+      <main class="doc-content">
+        <slot />
+      </main>
+    </div>
+    <Footer />
+  </body>
+</html>

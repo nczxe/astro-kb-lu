@@ -1,0 +1,16 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+
+const title = 'Getting started';
+---
+
+<DocsLayout title={title} description="Getting started with this knowledge base">
+  <h1>{title}</h1>
+  <p>Welcome to the documentation site. This demo shows how to use this repository as a documentation site (docs).</p>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><a href="/en/docs/getting-started/">Quickstart</a></li>
+    <li>Add pages under <code>src/pages/en/docs/</code> (or use content collections)</li>
+  </ul>
+</DocsLayout>

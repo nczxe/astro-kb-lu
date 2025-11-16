@@ -1,0 +1,13 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import UpdateList from '../../components/UpdateList.astro';
+
+const title = '更新记录';
+---
+
+<DocsLayout title={title}>
+  <h1>{title}</h1>
+  <p>下面显示从 GitHub 拉取的两个站点最近提交（docs.tncrr.us.kg 与 tncrr.us.kg）。</p>
+
+  <UpdateList />
+</DocsLayout>

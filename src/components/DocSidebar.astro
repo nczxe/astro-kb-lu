@@ -1,0 +1,270 @@
+---
+// 自动生成侧栏：使用 eager 导入页面模块并尝试从 frontmatter 中抽取 title
+const cnModules = import.meta.glob('/src/pages/docs/**/*.{md,mdx,astro}', { eager: true }) as Record<string, any>;
+const enModules = import.meta.glob('/src/pages/en/docs/**/*.{md,mdx,astro}', { eager: true }) as Record<string, any>;
+
+function normalizeRoute(p: string){
+  let route = p.replace('/src/pages', '').replace(/\.(astro|md|mdx)$/, '');
+  if(route.endsWith('/index')) route = route.replace(/\/index$/, '/');
+  return route + (route.endsWith('/') ? '' : '/');
+}
+
+function extractTitle(mod:any, path:string, isEn=false){
+  // try common export names
+  const fm = mod?.frontmatter || mod?.frontMatter || mod?.metadata || mod?.meta || null;
+  if(fm && fm.title) return fm.title;
+  // for .astro pages, sometimes exported const title exists
+  if(mod && typeof mod === 'object'){
+    if(mod.title && typeof mod.title === 'string') return mod.title;
+    if(mod.default && mod.default.frontmatter && mod.default.frontmatter.title) return mod.default.frontmatter.title;
+  }
+  // fallback: take filename
+  const parts = path.split('/');
+  const file = parts[parts.length-1].replace(/\.(astro|md|mdx)$/, '');
+  if(file.toLowerCase() === 'index'){
+    // use parent folder name, or '入门' for docs root
+    const parent = parts[parts.length-2] || '';
+    if(parent === 'docs') return isEn ? 'Getting started' : '文档';
+    return parent.replace(/-/g,' ');
+  }
+  return file.replace(/-/g,' ');
+}
+
+function buildPages(mods: Record<string, any>, isEn=false){
+  const pages: {route:string,title:string,order?:number}[] = [];
+  for(const p in mods){
+    const route = normalizeRoute(p);
+    const mod = mods[p];
+    const title = extractTitle(mod, p, isEn);
+    const order = mod?.frontmatter?.order ?? mod?.order ?? 9999;
+    pages.push({ route, title, order });
+  }
+  pages.sort((a,b)=> (a.order! - b.order!) || a.title.localeCompare(b.title));
+  return pages;
+}
+
+const cnPages = buildPages(cnModules, false);
+const enPages = buildPages(enModules, true);
+
+const titleMap: { [k: string]: string } = {
+  '/docs/': '文档',
+};
+
+function groupPages(pages: {route:string,title:string,order?:number}[], isEn=false){
+  const groups = new Map<string, {route:string,title:string,order?:number}[]>();
+  const prefix = isEn ? '/en/docs/' : '/docs/';
+  for(const p of pages){
+    let rel = p.route;
+    if(rel.startsWith(prefix)) rel = rel.slice(prefix.length);
+    else rel = rel.replace(/^\/docs\/?/, '');
+    // normalize
+    rel = rel.replace(/^\//, '').replace(/\/$/, '');
+    const first = rel.split('/').filter(Boolean)[0] || 'root';
+    const key = first || 'root';
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(p);
+  }
+  // convert map to array with titles
+  const out = Array.from(groups.entries()).map(([k,v])=>({
+    key: k,
+    title: k === 'root' ? (isEn ? 'Getting started' : '入门') : k.replace(/-/g,' '),
+    items: v,
+  }));
+  // preserve item order inside groups
+  out.forEach(g=> g.items.sort((a,b)=> (a.order! - b.order!) || a.title.localeCompare(b.title)));
+  // sort groups with root first
+  out.sort((a,b)=>{ if(a.key==='root') return -1; if(b.key==='root') return 1; return a.title.localeCompare(b.title); });
+  return out;
+}
+
+const cnGroups = groupPages(cnPages, false);
+const enGroups = groupPages(enPages, true);
+---
+<nav>
+  <h3 data-lang="cn">文档</h3>
+  <h3 data-lang="en" style="display:none">Documentation</h3>
+
+  <div class="docs-list" data-lang-list="cn">
+    { cnGroups.map((g: any) => (
+      <div class="docs-group" data-group={g.key}>
+        <h4 class="group-title">{ g.title }</h4>
+        <ul>
+          { g.items.map((p: any) => (
+            <li class="doc-item"><a href={p.route}>{ (titleMap[p.route] ?? p.title) }</a></li>
+          )) }
+        </ul>
+      </div>
+    )) }
+  </div>
+
+  <div class="docs-list" data-lang-list="en" style="display:none">
+    { enGroups.map((g: any) => (
+      <div class="docs-group" data-group={g.key}>
+        <h4 class="group-title">{ g.title }</h4>
+        <ul>
+          { g.items.map((p: any) => (
+            <li class="doc-item"><a href={p.route}>{ p.title }</a></li>
+          )) }
+        </ul>
+      </div>
+    )) }
+  </div>
+</nav>
+
+<script>
+  // 客户端切换侧栏显示：中文页面显示中文列表，英文页面显示英文列表
+  document.addEventListener('DOMContentLoaded', ()=>{
+    try{
+      const path = location.pathname || '/';
+      const cnList = document.querySelector('[data-lang-list="cn"]') as HTMLElement | null;
+      const enList = document.querySelector('[data-lang-list="en"]') as HTMLElement | null;
+      const cnHeader = document.querySelector('h3[data-lang="cn"]') as HTMLElement | null;
+      const enHeader = document.querySelector('h3[data-lang="en"]') as HTMLElement | null;
+      if(path.startsWith('/en/')){
+        if(cnList) cnList.style.display = 'none';
+        if(enList) enList.style.display = '';
+        if(cnHeader) cnHeader.style.display = 'none';
+        if(enHeader) enHeader.style.display = '';
+      } else {
+        if(cnList) cnList.style.display = '';
+        if(enList) enList.style.display = 'none';
+        if(cnHeader) cnHeader.style.display = '';
+        if(enHeader) enHeader.style.display = 'none';
+      }
+
+      // 高亮当前链接并展开包含当前链接的分组
+      const normalize = (s:string)=> (s || '').replace(/\/?$/,'');
+      [cnList, enList].forEach(list => {
+        if(!list) return;
+        const links = Array.from(list.querySelectorAll('a')) as HTMLAnchorElement[];
+        links.forEach(a => {
+          const href = a.getAttribute('href') || '';
+          if(normalize(href) === normalize(path)){
+            a.classList.add('active');
+            const group = a.closest('.docs-group') as HTMLElement | null;
+            if(group) group.classList.add('expanded');
+          }
+        });
+      });
+
+      // 可点击分组标题以展开/折叠
+      document.querySelectorAll('.group-title').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const parent = el.closest('.docs-group');
+          if(parent) parent.classList.toggle('expanded');
+        });
+      });
+
+    }catch(e){/* noop */}
+  });
+</script>
+
+<style>
+  nav {
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(var(--gray-100), 0.04);
+  }
+  nav h3 {
+    margin: 0 0 0.5rem 0;
+  }
+  nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.5rem 0;
+  }
+  nav li a {
+    display: block;
+    padding: 0.4rem 0;
+    color: rgb(var(--black));
+    text-decoration: none;
+  }
+  nav li a:hover {
+    color: rgb(var(--accent));
+  }
+
+  /* Layout & visual improvements */
+  nav {
+    width: 200px; /* 缩小宽度，减少占用 */
+    position: fixed; /* 绝对固定在视口左侧 */
+    top: calc(56px + 1rem); /* 保持在顶部 dock 之下 */
+    left: 0; /* 粘在视口左侧 */
+    height: calc(100vh - (56px + 1.5rem));
+    overflow: auto;
+    z-index: 20;
+    padding-left: env(safe-area-inset-left, 0);
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 8px 12px 30px rgba(2,6,23,0.06);
+    border-right: 1px solid rgba(0,0,0,0.04);
+    padding: 0.75rem 0.5rem;
+    border-radius: 0 10px 10px 0;
+  }
+
+  /* Slight separator so sidebar reads as left rail when overlapping */
+  nav::after{
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 0;
+    height: 100%;
+    width: 8px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0,0,0,0.02), rgba(0,0,0,0));
+  }
+
+  .docs-group {
+    margin-bottom: 0.75rem;
+  }
+  .group-title {
+    margin: 0.4rem 0 0.2rem 0;
+    font-size: 0.88rem;
+    color: rgb(var(--muted));
+    cursor: pointer;
+    user-select: none;
+    text-align: center; /* 标题居中 */
+    letter-spacing: 0.2px;
+  }
+  .group-title:hover { color: rgb(var(--accent)); }
+
+  .docs-group ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: max-height 360ms cubic-bezier(.2,.9,.2,1), opacity 240ms ease, transform 240ms ease;
+    will-change: max-height, opacity, transform;
+  }
+  .docs-group.expanded ul { max-height: 1200px; opacity: 1; transform: translateY(0); }
+
+  .doc-item a {
+    display: block;
+    padding: 0.22rem 0;
+    color: rgb(var(--black));
+    text-decoration: none;
+    border-radius: 6px;
+    transition: color 150ms ease, background 150ms ease, transform 150ms ease;
+    font-size: 0.95rem;
+    text-align: center; /* 链接文字居中 */
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+
+  .doc-item a:hover { transform: translateY(-1px); }
+
+  .doc-item a.active {
+    color: rgb(var(--accent));
+    font-weight: 600;
+    background: rgba(var(--accent-rgb, 34, 150, 243), 0.06);
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.03);
+  }
+
+  /* small screens: make nav full width */
+  @media (max-width: 900px){
+    nav { position: static; width: auto; height: auto; }
+  }
+</style>
