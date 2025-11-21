@@ -1,4 +1,5 @@
 ---
+import SearchBox from './SearchBox.astro';
 ---
 
 <header class="docs-dock" role="banner">
@@ -16,6 +17,10 @@
         <a class="dock-link" href="/">站点</a>
         <a class="dock-link" href="/docs/">文档</a>
         <a class="dock-link" href="/about">关于</a>
+      </div>
+      
+      <div class="dock-search">
+        <SearchBox />
       </div>
 
     <div class="dock-right">
@@ -37,20 +42,38 @@
       position: sticky;
       top:0;
       z-index: 40;
+      transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    }
+    
+    html.dark .docs-dock{
+      background: rgb(30, 30, 35);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.3);
     }
     .dock-inner{ max-width:1200px; margin:0 auto; padding:0.5rem 1rem; display:flex; align-items:center; gap:1rem; justify-content:space-between }
     .dock-left{ flex:1 }
     .dock-center{ display:flex; gap:0.75rem; flex:1; justify-content:center }
     .dock-right{ display:flex; gap:0.5rem; align-items:center }
-    .dock-link{ text-decoration:none; color:rgb(var(--black)); padding:0.25rem 0.5rem }
+    .dock-link{ text-decoration:none; color:rgb(var(--black)); padding:0.25rem 0.5rem; transition: color var(--transition-speed) ease }
     .breadcrumb{ display:flex; gap:0.5rem; list-style:none; padding:0; margin:0 }
     .breadcrumb li::after{ content: ">"; margin-left:0.5rem }
     .breadcrumb li:last-child::after{ content:'' }
     select{ padding:0.25rem; border-radius:6px }
-    #theme-toggle{ padding:0.25rem 0.6rem; border-radius:6px; background:transparent; border:1px solid rgba(0,0,0,0.06); cursor:pointer }
+    #theme-toggle{ padding:0.25rem 0.6rem; border-radius:6px; background:transparent; border:1px solid rgba(0,0,0,0.06); cursor:pointer; transition: border-color var(--transition-speed) ease }
+    
+    html.dark #theme-toggle{
+      border-color: rgba(255,255,255,0.1);
+    }
+    
+    .dock-search{
+      flex: 1;
+      max-width: 300px;
+    }
     .visually-hidden{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden }
 
-    @media (max-width:900px){ .dock-center{ display:none } }
+    @media (max-width:900px){ 
+      .dock-center{ display:none }
+      .dock-search{ display:none }
+    }
   </style>
 
   <script>

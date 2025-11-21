@@ -12,10 +12,15 @@
 	--gray-light: 229, 233, 240;
 	--gray-dark: 34, 41, 57;
 	--gray-gradient: rgba(var(--gray-light), 50%), #fff;
-	--box-shadow:
+	--box-shadow: 
 		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
 		0 16px 32px rgba(var(--gray), 33%);
+	
+	/* 主题切换过渡效果 */
+	color-scheme: light;
+	--transition-speed: 0.3s;
 }
+
 @font-face {
 	font-family: "Atkinson";
 	src: url("/fonts/atkinson-regular.woff") format("woff");
@@ -23,6 +28,7 @@
 	font-style: normal;
 	font-display: swap;
 }
+
 @font-face {
 	font-family: "Atkinson";
 	src: url("/fonts/atkinson-bold.woff") format("woff");
@@ -30,6 +36,12 @@
 	font-style: normal;
 	font-display: swap;
 }
+
+/* 全局过渡效果 */
+html {
+	transition: background-color var(--transition-speed) ease, color-scheme var(--transition-speed) ease;
+}
+
 body {
 	font-family: "Atkinson", sans-serif;
 	margin: 0;
@@ -42,13 +54,16 @@ body {
 	color: rgb(var(--gray-dark));
 	font-size: 20px;
 	line-height: 1.7;
+	transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
 }
+
 main {
 	width: 720px;
 	max-width: calc(100% - 2em);
 	margin: auto;
 	padding: 3em 1em;
 }
+
 h1,
 h2,
 h3,
@@ -59,74 +74,94 @@ h6 {
 	color: rgb(var(--black));
 	line-height: 1.2;
 }
+
 h1 {
 	font-size: 3.052em;
 }
+
 h2 {
 	font-size: 2.441em;
 }
+
 h3 {
 	font-size: 1.953em;
 }
+
 h4 {
 	font-size: 1.563em;
 }
+
 h5 {
 	font-size: 1.25em;
 }
+
 strong,
 b {
 	font-weight: 700;
 }
+
 a {
 	color: var(--accent);
 }
+
 a:hover {
 	color: var(--accent);
 }
+
 p {
 	margin-bottom: 1em;
 }
+
 .prose p {
 	margin-bottom: 2em;
 }
+
 textarea {
 	width: 100%;
 	font-size: 16px;
 }
+
 input {
 	font-size: 16px;
 }
+
 table {
 	width: 100%;
 }
+
 img {
 	max-width: 100%;
 	height: auto;
 	border-radius: 8px;
 }
+
 code {
 	padding: 2px 5px;
 	background-color: rgb(var(--gray-light));
 	border-radius: 2px;
 }
+
 pre {
 	padding: 1.5em;
 	border-radius: 8px;
 }
+
 pre > code {
 	all: unset;
 }
+
 blockquote {
 	border-left: 4px solid var(--accent);
 	padding: 0 0 0 20px;
 	margin: 0px;
 	font-size: 1.333em;
 }
+
 hr {
 	border: none;
 	border-top: 1px solid rgb(var(--gray-light));
 }
+
 @media (max-width: 720px) {
 	body {
 		font-size: 18px;
@@ -146,6 +181,7 @@ html.dark {
 	--gray-dark: 220, 225, 230;
 	--box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 	background: linear-gradient(rgba(18,18,20,0.6), rgba(18,18,20,0.6));
+	color-scheme: dark;
 }
 
 html.dark body {
@@ -154,6 +190,36 @@ html.dark body {
 
 html.dark a { color: var(--accent); }
 
+/* 为所有主要元素添加过渡效果 */
+a, button, img, pre, code, blockquote, table {
+	transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease, border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+}
+
+/* 确保图片在深色模式下也能正确显示 */
+img {
+	filter: var(--img-filter, none);
+	transition: filter var(--transition-speed) ease;
+}
+
+/* 修复可能的滚动条问题 */
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: rgba(var(--gray-light), 0.5);
+	transition: background var(--transition-speed) ease;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(var(--gray), 0.5);
+	border-radius: 4px;
+	transition: background var(--transition-speed) ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(var(--gray), 0.8);
+}
 
 .sr-only {
 	border: 0;
